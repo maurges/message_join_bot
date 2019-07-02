@@ -26,7 +26,7 @@ class MessageCounter:
     def __init__(self, base_queue : MessageQueue = {}) -> None:
         self.msg_queue = base_queue
 
-    def process(self, message) -> Action:
+    def decide(self, message) -> Action:
         chat_id = message.chat.id
         from_id = message.from_user.id
         time    = message.date

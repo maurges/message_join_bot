@@ -7,7 +7,7 @@ bot.
 """
 
 import logging
-import decide
+import logic
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Handler
 from telegram import Update
 
@@ -36,12 +36,12 @@ def help(bot, update):
 
 def reply(counter):
     def internal(bot, update):
-        decision = counter.process(update.message)
+        decision = counter.decide(update.message)
 
         message = ""
-        if isinstance(decision, decide.DoNothing):
+        if isinstance(decision, logic.DoNothing):
             message = "nothing"
-        elif isinstance(decision, decide.Waited):
+        elif isinstance(decision, logic.Waited):
             message = (f"waited {decision.seconds} seconds" +
                        f" for {decision.messages} messages")
 
@@ -67,7 +67,7 @@ def main(token):
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
     # on noncommand i.e message - echo the message on Telegram
-    dp.add_handler(MessageHandler(Filters.text, reply(decide.MessageCounter())))
+    dp.add_handler(MessageHandler(Filters.text, reply(logic.MessageCounter())))
 
     # log all errors
     dp.add_error_handler(error)
