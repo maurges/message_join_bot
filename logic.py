@@ -71,8 +71,8 @@ class UserSwitching(UserStatus):
 
     def update(self, message) -> UserStatus:
         # compute stop time for strict status
-        all_messages = self.messages + self.base_message
-        stop_time = max(all_messages, key=lambda x: x.date) + DelayRelease
+        all_messages = self.messages + [self.base_message]
+        stop_time = max(all_messages, key=lambda x: x.date).date + DelayRelease
 
         if message.date <= stop_time:
             # switch completely to strict mode
