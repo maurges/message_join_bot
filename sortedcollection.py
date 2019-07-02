@@ -3,6 +3,7 @@
 """
 Created by Raymond Hettinger on Fri, 16 Apr 2010 (MIT)
 Taken from https://code.activestate.com/recipes/577197-sortedcollection/
+Modified by d86leader on 2019-07-02
 """
 
 from bisect import bisect_left, bisect_right
@@ -198,6 +199,11 @@ class SortedCollection(object):
         if i != len(self):
             return self._items[i]
         raise ValueError('No item found with key above: %r' % (k,))
+
+    def drop_index(self, i):
+        "Remove item by its index"
+        del self._keys[i]
+        del self._items[i]
 
 
 # ---------------------------  Simple demo and tests  -------------------------
