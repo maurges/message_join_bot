@@ -47,7 +47,7 @@ class TestDecide(unittest.TestCase):
         r = counter.decide(msg)
         self.assertIsInstance(r, logic.DoNothing)
 
-    def test_inserts_five(self):
+    def test_inserts_after_five(self):
         counter = logic.MessageCounter()
 
         msg = SimpleMessage.gen()
@@ -57,6 +57,17 @@ class TestDecide(unittest.TestCase):
         self.assertIsInstance(r, logic.InsertInto)
         sources = r.sources
         self.assertEqual(len(sources), logic.MessageThreshold - 1)
+
+        # insert one more after threshold
+        r = counter.decide(msg)
+        self.assertIsInstance(r, logic.InsertInto)
+        sources = r.sources
+        self.assertEqual(len(sources), 1)
+
+        # insert a later message
+        msg.date += logic.DelayRelease * 1.2
+        r = counter.decide(msg)
+        self.assertIsInstance(r, logic.DoNothing)
 
 
 if __name__ == '__main__':
