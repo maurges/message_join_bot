@@ -131,6 +131,9 @@ class SortedCollection(object):
         j = bisect_right(self._keys, k)
         return item in self._items[i:j]
 
+    def __str__(self):
+        return self._items.__str__()
+
     def index(self, item):
         'Find the position of an item.  Raise ValueError if not found.'
         k = self._key(item)
