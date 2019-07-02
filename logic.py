@@ -30,7 +30,7 @@ class UserStatus:
     def is_strict(self) -> bool:
         return False
     def is_lax(self) -> bool:
-        return True
+        return False
 
 class UserLax(UserStatus):
     "User allowed to post messages"
@@ -47,26 +47,50 @@ class UserLax(UserStatus):
         latest_time = self.queue[-1].date
         threshold_time = latest_time - DelayDelete
 
-        while self.queue[0].date > threshold_time:
+        while len(self.queue) > 0 and self.queue[0].date <= threshold_time:
             self.queue.drop_index(0)
 
         # if the queue has too much late messages
-        if len(self.queue) > MessageThreshold:
+        if len(self.queue) >= MessageThreshold:
             # we return a new status
-            return UserStrict(self.queue[-1])
+            return UserSwitching(self.queue[0], self.queue[1:])
         else:
             return self
 
     def is_lax(self) -> bool:
         return True
 
+class UserSwitching(UserStatus):
+    "When switching from lax to strict"
+    "This carries a payload of a base message"
+    "and recently posted messages to be inserted into base"
+
+    def __init__(self, base_message, messages):
+        self.base_message = base_message
+        self.messages = messages
+
+    def update(self, message) -> UserStatus:
+        # compute stop time for strict status
+        all_messages = self.messages + self.base_message
+        stop_time = max(all_messages, key=lambda x: x.date) + DelayRelease
+
+        if message.date <= stop_time:
+            # switch completely to strict mode
+            stop_time = max(stop_time, message.date + DelayRelease)
+            return UserStrict(self.base_message, stop_time)
+        else:
+            return UserLax(message)
+
+    def is_strict(self) -> bool:
+        return True
+
 class UserStrict(UserStatus):
     "User has their messages instantly deleted"
     "Payload is time when to stop deletion"
 
-    def __init__(self, initial_message):
-        self.base_message = initial_message
-        self.stop_time = message.date + DelayRelease
+    def __init__(self, base_message, stop_time):
+        self.base_message = base_message
+        self.stop_time = stop_time
 
     def update(self, message) -> UserStatus:
         # update stop time
@@ -78,8 +102,6 @@ class UserStrict(UserStatus):
             return self
         else:
             return UserLax(message)
-
-
 
     def is_strict(self) -> bool:
         return True
@@ -103,9 +125,9 @@ class Action:
 class DoNothing(Action):
     pass
 class InsertInto(Action):
-    def __init__(self, receiver, source):
+    def __init__(self, receiver, sources):
         self.receiver = receiver
-        self.source = source
+        self.sources = sources
 
 
 class MessageCounter:
@@ -130,7 +152,14 @@ class MessageCounter:
 
         if new_status.is_lax():
             return DoNothing()
+
+        if isinstance(new_status, UserSwitching):
+            return InsertInto(new_status.base_message
+                             ,new_status.messages)
+            # messages contains even the new message, no need to manually add
+            # it to insertion list
         elif isinstance(new_status, UserStrict):
-            return InsertInto(new_status.base_message, message)
+            return InsertInto(new_status.base_message, [message])
         else:
+            # this is impossible state, but type checker doesn't know that
             return DoNothing()
