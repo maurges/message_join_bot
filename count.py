@@ -8,6 +8,7 @@ bot.
 
 import logging
 import logic
+import join
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Handler
 from telegram import Update
 
@@ -34,18 +35,32 @@ def help(bot, update):
     update.message.reply_text('help!')
 
 
-def reply(counter):
+def reply(counter, joiner):
     def internal(bot, update):
         decision = counter.decide(update.message)
 
-        message = ""
         if isinstance(decision, logic.DoNothing):
-            message = "nothing"
-        elif isinstance(decision, logic.Waited):
-            message = (f"waited {decision.seconds} seconds" +
-                       f" for {decision.messages} messages")
+            joiner.cleanup(update.message)
+            return
+        # otherwise instance is UniteMessages
+        user_messages = decision.messages
+        decision = joiner.join(user_messages)
 
-        update.message.reply_text(message)
+        if isinstance(decision, join.SendMessage):
+            did_send = bot.send_message(
+                    chat_id = decision.chat_id
+                    ,text   = decision.text
+                    )
+            joiner.sent_message(update.message, did_send)
+        elif isinstance(decision, join.EditMessage):
+            bot.edit_message_text(
+                    chat_id     = decision.chat_id
+                    ,message_id = decision.message_id
+                    ,text       = decision.text
+                    )
+        # delete user's messages
+        for msg in user_messages:
+            bot.delete_message(msg.chat.id, msg.message_id)
     return internal
 
 
@@ -67,7 +82,8 @@ def main(token):
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
     # on noncommand i.e message - echo the message on Telegram
-    dp.add_handler(MessageHandler(Filters.text, reply(logic.MessageCounter())))
+    reply_func = reply(logic.MessageCounter(), join.Joiner())
+    dp.add_handler(MessageHandler(Filters.text, reply_func))
 
     # log all errors
     dp.add_error_handler(error)
