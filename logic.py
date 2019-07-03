@@ -53,7 +53,7 @@ class UserLax(UserStatus):
         # if the queue has too much late messages
         if len(self.queue) >= MessageThreshold:
             # we return a new status
-            return UserSwitching(self.queue[0], self.queue[1:])
+            return UserSwitching(self.queue)
         else:
             return self
 
@@ -62,22 +62,19 @@ class UserLax(UserStatus):
 
 class UserSwitching(UserStatus):
     "When switching from lax to strict"
-    "This carries a payload of a base message"
-    "and recently posted messages to be inserted into base"
+    "Payload is recently posted messages to be united"
 
-    def __init__(self, base_message, messages):
-        self.base_message = base_message
+    def __init__(self, messages):
         self.messages = messages
 
     def update(self, message) -> UserStatus:
         # compute stop time for strict status
-        all_messages = self.messages + [self.base_message]
-        stop_time = max(all_messages, key=lambda x: x.date).date + DelayRelease
+        stop_time = max(map(lambda x: x.date, self.messages)) + DelayRelease
 
         if message.date <= stop_time:
             # switch completely to strict mode
             stop_time = max(stop_time, message.date + DelayRelease)
-            return UserStrict(self.base_message, stop_time)
+            return UserStrict(stop_time)
         else:
             return UserLax(message)
 
@@ -88,8 +85,7 @@ class UserStrict(UserStatus):
     "User has their messages instantly deleted"
     "Payload is time when to stop deletion"
 
-    def __init__(self, base_message, stop_time):
-        self.base_message = base_message
+    def __init__(self, stop_time):
         self.stop_time = stop_time
 
     def update(self, message) -> UserStatus:
@@ -124,10 +120,9 @@ class Action:
     pass
 class DoNothing(Action):
     pass
-class InsertInto(Action):
-    def __init__(self, receiver, sources):
-        self.receiver = receiver
-        self.sources = sources
+class UniteMessages(Action):
+    def __init__(self, sources):
+        self.messages = sources
 
 
 class MessageCounter:
@@ -154,12 +149,11 @@ class MessageCounter:
             return DoNothing()
 
         if isinstance(new_status, UserSwitching):
-            return InsertInto(new_status.base_message
-                             ,new_status.messages)
+            return UniteMessages(new_status.messages)
             # messages contains even the new message, no need to manually add
             # it to insertion list
         elif isinstance(new_status, UserStrict):
-            return InsertInto(new_status.base_message, [message])
+            return UniteMessages([message])
         else:
             # this is impossible state, but type checker doesn't know that
             return DoNothing()
