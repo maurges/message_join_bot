@@ -4,6 +4,7 @@ from typing import *
 from collections import namedtuple
 from datetime import datetime, timedelta
 from sortedcollection import SortedCollection
+from copy import copy
 
 """
 Description: a class to decide when to delete which messages.
@@ -37,11 +38,11 @@ class UserLax(UserStatus):
     "This carries a payload of recent posted messages"
 
     def __init__(self, initial_message):
-        self.queue = new_queue(initial_message)
+        self.queue = new_queue(copy(initial_message))
 
     def update(self, message) -> UserStatus:
         # insert the new message
-        self.queue.insert(message)
+        self.queue.insert(copy(message))
 
         # drop all old messages
         latest_time = self.queue[-1].date
