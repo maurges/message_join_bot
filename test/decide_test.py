@@ -54,14 +54,14 @@ class TestDecide(unittest.TestCase):
         for _ in range(logic.MessageThreshold):
             r = counter.decide(msg)
 
-        self.assertIsInstance(r, logic.InsertInto)
-        sources = r.sources
-        self.assertEqual(len(sources), logic.MessageThreshold - 1)
+        self.assertIsInstance(r, logic.UniteMessages)
+        sources = r.messages
+        self.assertEqual(len(sources), logic.MessageThreshold)
 
         # insert one more after threshold
         r = counter.decide(msg)
-        self.assertIsInstance(r, logic.InsertInto)
-        sources = r.sources
+        self.assertIsInstance(r, logic.UniteMessages)
+        sources = r.messages
         self.assertEqual(len(sources), 1)
 
         # insert a later message
