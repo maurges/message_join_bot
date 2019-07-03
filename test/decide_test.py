@@ -53,6 +53,7 @@ class TestDecide(unittest.TestCase):
         msg = SimpleMessage.gen()
         for _ in range(logic.MessageThreshold):
             r = counter.decide(msg)
+            msg.date += logic.DelayDelete * 0.2
 
         self.assertIsInstance(r, logic.UniteMessages)
         sources = r.messages
@@ -68,6 +69,16 @@ class TestDecide(unittest.TestCase):
         msg.date += logic.DelayRelease * 1.2
         r = counter.decide(msg)
         self.assertIsInstance(r, logic.DoNothing)
+
+    def test_no_joining_separated(self):
+        counter = logic.MessageCounter()
+
+        msg = SimpleMessage.gen()
+        for _ in range(logic.MessageThreshold):
+            r = counter.decide(msg)
+            self.assertIsInstance(r, logic.DoNothing)
+
+            msg.date += logic.DelayDelete * 0.25
 
 
 if __name__ == '__main__':
