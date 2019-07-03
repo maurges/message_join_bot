@@ -30,8 +30,8 @@ def start(bot, update):
 
 
 def help(bot, update):
-    """Send a message when the command /describe is issued."""
-    update.message.reply_text('describe!')
+    """Send a message when the command /help is issued."""
+    update.message.reply_text('help!')
 
 
 def reply(counter):
