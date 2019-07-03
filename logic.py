@@ -19,8 +19,8 @@ it's called on all arriving messages.
 """
 
 
-DelayDelete = timedelta(seconds=5)
-DelayRelease = timedelta(seconds=5)
+DelayDelete = timedelta(seconds=15)
+DelayRelease = timedelta(seconds=10)
 MessageThreshold = 5
 
 
@@ -105,7 +105,9 @@ class UserStrict(UserStatus):
 
 
 # a complex key for our table
-UID = namedtuple("UID", ["chat_id", "from_id"])
+UID = NamedTuple("UID", [("chat_id", int)
+                        ,("from_id", int)
+                        ])
 # telegram messages are not comparable, so we compare them
 # on their date with key function. This is a function
 # to create a correct collection
