@@ -49,7 +49,6 @@ class Joiner:
 
     def join(self, messages) -> Action:
         message = messages[0]
-#         messages.sort(key = lambda x: x.date)
         messages = map(lambda x: x.text, messages)
 
         chat_id = message.chat.id
