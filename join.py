@@ -3,8 +3,17 @@
 from typing import *
 
 """
+Author: d86leader@mail.com, 2019
+License: published under GNU GPL-3
+
 Description: routines with joining messages and keeping track of what to put
-where.
+where. To use this you need to create a joiner instance. After deciding on an
+action (with a counter for example) you execute Joiner#join() and it tells you
+whether you need to send a new message or edit an existing one.
+Important! After sending a message you need to execute Joiner#message_sent()
+with the message you have sent and any user message that has triggered you.
+Also or on some timer, you should execute Joiner#cleanup() so this won't decide
+to join messages to a very old thread.
 """
 
 # a complex key for our table

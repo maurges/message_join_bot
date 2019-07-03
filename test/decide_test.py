@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""
+Author: d86leader@mail.com, 2019
+License: published under GNU GPL-3
+"""
+
 import logic
 import unittest
 from typing import *

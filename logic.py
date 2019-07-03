@@ -7,11 +7,14 @@ from sortedcollection import SortedCollection
 from copy import copy
 
 """
+Author: d86leader@mail.com, 2019
+License: published under GNU GPL-3
+
 Description: a class to decide when to delete which messages.
-The rule to delete is simple: if in 5 seconds we received 5 messages,
+The rule to delete is simple: if in 15 seconds we received 5 messages,
 delete and join them into one new message. Then each new messages from the same
 user will be appended to the message. This stops if the user hasn't sent
-anything in last 5 seconds.
+anything in last 10 seconds.
 
 Usage: create an instance of MessageCounter and call decide() method,
 and it will tell you what to do. The method is highly stateful. It's best if
