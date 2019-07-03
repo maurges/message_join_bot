@@ -1,5 +1,5 @@
 TESTDIR = test
-TESTFILES = decide_test
+TESTFILES = decide_test join_test
 
 .PHONY: test
 test:
