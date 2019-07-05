@@ -21,10 +21,6 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
-def describe(obj):
-    print(f"type: {type(obj)}")
-    print(f"dir: {dir(obj)}")
-
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
@@ -35,7 +31,12 @@ def start(bot, update):
 
 def help(bot, update):
     """Send a message when the command /help is issued."""
-    update.message.reply_text('help!')
+    message = """
+    Hello! I'm a bot created to combat flood in supergroups. I'm a message join bot!
+See my github: https://github.com/d86leader/message_join_bot for more info.
+If you want to use this bot in your group, please set up your own copy. I'm currently running on {platform}.
+    """.format(platform="LG Smart TV")
+    update.message.reply_text(message)
 
 
 def reply(counter, joiner):
