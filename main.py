@@ -35,7 +35,7 @@ def help(bot, update):
     Hello! I'm a bot created to combat flood in supergroups. I'm a message join bot!
 See my github: https://github.com/d86leader/message_join_bot for more info.
 If you want to use this bot in your group, please set up your own copy. I'm currently running on {platform}.
-    """.format(platform="LG Smart TV")
+    """.format(platform="Cavium ThunderX 88XX")
     update.message.reply_text(message)
 
 
@@ -68,24 +68,19 @@ def reply(counter, joiner):
     return internal
 
 
-def error(bot, update):
+def error(bot, update, err):
     """Log Errors caused by Updates."""
-    logger.warning('Update "%s" caused error "%s"', update, context.error)
+    logger.warning('Update "%s" caused error "%s"', update, err)
 
 
 def main(token):
     """Start the bot."""
-    # Create the Updater and pass it your bot's token.
-    # Make sure to set use_context=True to use the new context based callbacks
-    # Post version 12 this will no longer be necessary
     updater = Updater(token)
-    # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
-    # on noncommand i.e message - echo the message on Telegram
+
     reply_func = reply(logic.MessageCounter(), join.Joiner())
     dp.add_handler(MessageHandler(Filters.text, reply_func))
 
