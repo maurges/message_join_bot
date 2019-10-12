@@ -141,6 +141,9 @@ class MessageCounter:
         time    = message.date
         if not chat_id or not from_id or not time:
             return DoNothing()
+        if is_forwarded(message):
+            # don't join forwared messages, there may be many and it's ok
+            return DoNothing()
 
         user_id = UID(chat_id=chat_id, from_id=from_id)
 
@@ -163,3 +166,11 @@ class MessageCounter:
         else:
             # this is impossible state, but type checker doesn't know that
             return DoNothing()
+
+def is_forwarded(msg) -> bool:
+    return ( msg.forward_from != None
+          or msg.forward_from_chat != None
+          or msg.forward_from_message_id != None
+          or msg.forward_signature != None
+          or msg.forward_date != None
+           )
