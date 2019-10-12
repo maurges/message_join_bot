@@ -24,7 +24,7 @@ it's called on all arriving messages.
 
 DelayDelete = timedelta(seconds=15)
 DelayRelease = timedelta(seconds=10)
-MessageThreshold = 5
+MessageThreshold = 4
 
 
 # For each user in chat we keep their status
