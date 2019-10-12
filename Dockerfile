@@ -5,8 +5,9 @@ RUN apk add --update \
     py3-cryptography \
     && rm -rf /var/cache/apk/*
 
+COPY ./requirements.txt /usr/local/tgbot/requirements.txt
+RUN pip3 install -r /usr/local/tgbot/requirements.txt
 COPY . /usr/local/tgbot
 WORKDIR /usr/local/tgbot
-RUN pip3 install -r /usr/local/tgbot/requirements.txt
 
 ENTRYPOINT ["/usr/bin/env", "python3", "main.py"]
