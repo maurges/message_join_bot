@@ -12,7 +12,7 @@ bot.
 import logging
 import logic
 import join
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Handler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Handler, CallbackContext
 from telegram import Update
 
 # Enable logging
@@ -24,12 +24,12 @@ logger = logging.getLogger(__name__)
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
-def start(bot, update):
+def start(update : Update, context : CallbackContext):
     """Send a message when the command /start is issued."""
     update.message.reply_text('Hi!')
 
 
-def help(bot, update):
+def help(update : Update, context : CallbackContext):
     """Send a message when the command /help is issued."""
     message = """
     Hello! I'm a bot created to combat flood in supergroups. I'm a message join bot!
@@ -40,7 +40,8 @@ If you want to use this bot in your group, please set up your own copy. I'm curr
 
 
 def reply(counter, joiner):
-    def internal(bot, update):
+    def internal(update : Update, context : CallbackContext):
+        bot = context.bot
         decision = counter.decide(update.message)
 
         if isinstance(decision, logic.DoNothing):
@@ -68,14 +69,14 @@ def reply(counter, joiner):
     return internal
 
 
-def error(bot, update, err):
+def error(update : Update, context : CallbackContext):
     """Log Errors caused by Updates."""
-    logger.warning('Update "%s" caused error "%s"', update, err)
+    logger.warning('Update "%s" caused error "%s"', update, context.err)
 
 
 def main(token):
     """Start the bot."""
-    updater = Updater(token)
+    updater = Updater(token, use_context=True)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from typing import *
+from telegram import Message
 
 """
 Author: d86leader@mail.com, 2019
@@ -21,7 +22,7 @@ UID = NamedTuple("UID", [("chat_id", int)
                         ,("from_id", int)
                         ])
 MessageInfo = NamedTuple("MessageInfo",
-        [("message_id",   int)
+        [("message_id",   Optional[int])
         ,("current_text", str)
         ])
 UserCollection = Dict[UID, MessageInfo]
@@ -47,7 +48,7 @@ class Joiner:
     def __init__(self, base_messages : UserCollection = {}) -> None:
         self.bases = base_messages
 
-    def join(self, messages) -> Action:
+    def join(self, messages : Iterator[Message]) -> Action:
         message = messages[0]
         messages = map(lambda x: x.text, messages)
 
@@ -71,14 +72,16 @@ class Joiner:
         else:
             message_id, text = self.bases[user_id]
             assert message_id is not None
+            if message_id == None:
+                raise RuntimeError("Encountered None as message id. Did you forget to call `sent_message`?")
 
             text += "\n" + "\n".join(messages)
-            self.bases[user_id] = (message_id, text)
+            self.bases[user_id] = MessageInfo(message_id, text)
             return EditMessage(chat_id, message_id, text)
 
 
     # cleanup when the first unification message was sent
-    def sent_message(self, user_message, bot_message) -> None:
+    def sent_message(self, user_message : Message, bot_message : Message) -> None:
         chat_id = user_message.chat.id
         from_id = user_message.from_user.id
         # throws something when fields not present
@@ -92,7 +95,7 @@ class Joiner:
 
 
     # when user no longer needs joining, cleanup their data from collection
-    def cleanup(self, message) -> None:
+    def cleanup(self, message : Message) -> None:
         chat_id = message.chat.id
         from_id = message.from_user.id
         # throws something when fields not present
