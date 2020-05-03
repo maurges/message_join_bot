@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 from typing import *
-from telegram import Message
+from html import escape
+from telegram import Message # type: ignore
 
 """
 Author: d86leader@mail.com, 2019
@@ -48,9 +49,9 @@ class Joiner:
     def __init__(self, base_messages : UserCollection = {}) -> None:
         self.bases = base_messages
 
-    def join(self, messages : Iterator[Message]) -> Action:
-        message = messages[0]
-        messages = map(lambda x: x.text, messages)
+    def join(self, messages_a : List[Message]) -> Action:
+        message = messages_a[0]
+        messages: Iterator[Message] = map(lambda x: x.text, messages_a)
 
         chat_id = message.chat.id
         from_id = message.from_user.id
@@ -62,8 +63,8 @@ class Joiner:
             if message.from_user.last_name:
                 author += " " + message.from_user.last_name
 
-            text = f"{author} says:\n"
-            text += "\n".join(messages)
+            text = f"<i><b>{author}</b> says:</i>\n"
+            text += "\n".join(map(escape, messages))
 
             self.bases[user_id] = MessageInfo(message_id=None
                                              ,current_text=text
@@ -75,7 +76,7 @@ class Joiner:
             if message_id == None:
                 raise RuntimeError("Encountered None as message id. Did you forget to call `sent_message`?")
 
-            text += "\n" + "\n".join(messages)
+            text += "\n" + "\n".join(map(escape, messages))
             self.bases[user_id] = MessageInfo(message_id, text)
             return EditMessage(chat_id, message_id, text)
 

@@ -12,8 +12,8 @@ bot.
 import logging
 import logic
 import join
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Handler, CallbackContext
-from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Handler, CallbackContext # type: ignore
+from telegram import Update # type: ignore
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -55,6 +55,7 @@ def reply(counter, joiner):
             did_send = bot.send_message(
                     chat_id = decision.chat_id
                     ,text   = decision.text
+                    ,parse_mode = "HTML"
                     )
             joiner.sent_message(update.message, did_send)
         elif isinstance(decision, join.EditMessage):
@@ -62,6 +63,7 @@ def reply(counter, joiner):
                     chat_id     = decision.chat_id
                     ,message_id = decision.message_id
                     ,text       = decision.text
+                    ,parse_mode = "HTML"
                     )
         # delete user's messages
         for msg in user_messages:
