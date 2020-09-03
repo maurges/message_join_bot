@@ -59,11 +59,10 @@ class Joiner:
         user_id = UID(chat_id=chat_id, from_id=from_id)
 
         if user_id not in self.bases:
-            author = message.from_user.first_name
-            if message.from_user.last_name:
-                author += " " + message.from_user.last_name
+            author = message.from_user.full_name
+            link = message.from_user.link
 
-            text = f"<i><b>{author}</b> says:</i>\n"
+            text = f"<i><a href=\"{link}\">{author}</a> says:</i>\n"
             text += "\n".join(map(escape, messages))
 
             self.bases[user_id] = MessageInfo(message_id=None

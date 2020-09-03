@@ -56,6 +56,7 @@ def reply(counter, joiner):
                     chat_id = decision.chat_id
                     ,text   = decision.text
                     ,parse_mode = "HTML"
+                    ,disable_web_page_preview = True
                     )
             joiner.sent_message(update.message, did_send)
         elif isinstance(decision, join.EditMessage):
@@ -64,6 +65,7 @@ def reply(counter, joiner):
                     ,message_id = decision.message_id
                     ,text       = decision.text
                     ,parse_mode = "HTML"
+                    ,disable_web_page_preview = True
                     )
         # delete user's messages
         for msg in user_messages:
