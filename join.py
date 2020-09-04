@@ -18,15 +18,20 @@ Also or on some timer, you should execute Joiner#cleanup() so this won't decide
 to join messages to a very old thread.
 """
 
-# a complex key for our table
+# complex keys for our tables
 UID = NamedTuple("UID", [("chat_id", int)
                         ,("from_id", int)
                         ])
+BodyID = NamedTuple("BodyID", [("chat_id", int)
+                              ,("text", str)
+                              ])
+MsgID = NamedTuple("MsgID", [("chat_id", int)
+                            ,("msg_id", int)
+                            ])
 MessageInfo = NamedTuple("MessageInfo",
         [("message_id",   Optional[int])
         ,("current_text", str)
         ])
-UserCollection = Dict[UID, MessageInfo]
 
 
 class Action:
@@ -46,62 +51,161 @@ class EditMessage(Action):
 
 
 class Joiner:
-    def __init__(self, base_messages : UserCollection = {}) -> None:
-        self.bases = base_messages
+    def __init__(self) -> None:
+        self.user_bases: Dict[UID, MessageInfo] = {}
+        self.content_bases: Dict[BodyID, MessageInfo] = {}
+        self.reply_bases: Dict[MsgID, MessageInfo] = {}
 
     def join(self, messages_a : List[Message]) -> Action:
         message = messages_a[0]
-        messages: Iterator[Message] = map(lambda x: x.text, messages_a)
+        messages: Iterator[str] = map(lambda x: x.text, messages_a)
 
         chat_id = message.chat.id
         from_id = message.from_user.id
         # throws something when fields not present
         user_id = UID(chat_id=chat_id, from_id=from_id)
 
-        if user_id not in self.bases:
+        if user_id not in self.user_bases:
             author = message.from_user.full_name
             link = message.from_user.link
 
             text = f"<i><a href=\"{link}\">{author}</a> says:</i>\n"
             text += "\n".join(map(escape, messages))
 
-            self.bases[user_id] = MessageInfo(message_id=None
-                                             ,current_text=text
-                                             )
+            self.user_bases[user_id] = MessageInfo(message_id=None
+                                                  ,current_text=text
+                                                  )
             return SendMessage(chat_id, text)
         else:
-            message_id, text = self.bases[user_id]
+            message_id, text = self.user_bases[user_id]
             assert message_id is not None
             if message_id == None:
                 raise RuntimeError("Encountered None as message id. Did you forget to call `sent_message`?")
 
             text += "\n" + "\n".join(map(escape, messages))
-            self.bases[user_id] = MessageInfo(message_id, text)
+            self.user_bases[user_id] = MessageInfo(message_id, text)
             return EditMessage(chat_id, message_id, text)
+
+    def unite_content(self, messages : List[Message]) -> Action:
+        message = messages[0]
+        chat_id = message.chat_id
+        content = message.text
+        key = BodyID(chat_id=chat_id, text=content)
+
+        if key not in self.content_bases:
+            text = join_users_texts(messages)
+            self.content_bases[key] = MessageInfo(None, text)
+            return SendMessage(chat_id, text)
+        else:
+            message_id, text = self.content_bases[key]
+            assert message_id is not None
+            if message_id == None:
+                raise RuntimeError("Encountered None as message id. Did you forget to call `sent_message`?")
+            text += "\n" + join_users_texts(messages)
+            self.content_bases[key] = MessageInfo(message_id, text)
+            return EditMessage(chat_id, message_id, text)
+
+    def unite_reply(self, messages : List[Message]) -> Action:
+        message = messages[0]
+        chat_id = message.chat_id
+        reply_id = message.reply_to_message.message_id
+        key = MsgID(chat_id=chat_id, msg_id=reply_id)
+
+        if key not in self.reply_bases:
+            text = join_users_texts(messages)
+            self.reply_bases[key] = MessageInfo(None, text)
+            return SendMessage(chat_id, text)
+        else:
+            message_id, text = self.reply_bases[key]
+            assert message_id is not None
+            if message_id == None:
+                raise RuntimeError("Encountered None as message id. Did you forget to call `sent_message`?")
+            text += "\n" + join_users_texts(messages)
+            self.reply_bases[key] = MessageInfo(message_id, text)
+            return EditMessage(chat_id, message_id, text)
+
 
 
     # cleanup when the first unification message was sent
     def sent_message(self, user_message : Message, bot_message : Message) -> None:
+        self.sent_message_join(user_message, bot_message)
+        self.sent_message_content(user_message, bot_message)
+        self.sent_message_reply(user_message, bot_message)
+
+    def sent_message_join(self, user_message : Message, bot_message : Message) -> None:
         chat_id = user_message.chat.id
         from_id = user_message.from_user.id
-        # throws something when fields not present
         user_id = UID(chat_id=chat_id, from_id=from_id)
 
+        if user_id not in self.user_bases:
+            return
+
         # insert the missing message_id which is used fo editing further
-        old_mid, text = self.bases[user_id]
-        self.bases[user_id] = MessageInfo(message_id=bot_message.message_id
-                                         ,current_text=text
-                                         )
+        _, text = self.user_bases[user_id]
+        self.user_bases[user_id] = MessageInfo(message_id=bot_message.message_id
+                                              ,current_text=text
+                                              )
+
+    def sent_message_content(self, user_message : Message, bot_message : Message) -> None:
+        chat_id = user_message.chat.id
+        content = user_message.text
+        key = BodyID(chat_id=chat_id, text=content)
+
+        if key not in self.content_bases:
+            return
+
+        # insert the missing message_id which is used fo editing further
+        _, text = self.content_bases[key]
+        self.content_bases[key] = MessageInfo(message_id=bot_message.message_id
+                                             ,current_text=text
+                                             )
+
+    def sent_message_reply(self, user_message : Message, bot_message : Message) -> None:
+        chat_id = user_message.chat.id
+        if not user_message.reply_to_message:
+            return
+        reply_id = user_message.reply_to_message.message_id
+        key = MsgID(chat_id=chat_id, msg_id=reply_id)
+
+        if key not in self.reply_bases:
+            return
+
+        # insert the missing message_id which is used fo editing further
+        _, text = self.reply_bases[key]
+        self.reply_bases[key] = MessageInfo(message_id=bot_message.message_id
+                                           ,current_text=text
+                                           )
 
 
     # when user no longer needs joining, cleanup their data from collection
     def cleanup(self, message : Message) -> None:
         chat_id = message.chat.id
+
         from_id = message.from_user.id
-        # throws something when fields not present
-        user_id = UID(chat_id=chat_id, from_id=from_id)
+        key1 = UID(chat_id=chat_id, from_id=from_id)
+        if key1 in self.user_bases:
+            del self.user_bases[key1]
 
-        if user_id not in self.bases:
-            return
+        content = message.text
+        key2 = BodyID(chat_id=chat_id, text=content)
+        if key2 in self.content_bases:
+            del self.content_bases[key2]
 
-        del self.bases[user_id]
+        if message.reply_to_message != None:
+            reply_id = message.reply_to_message.message_id
+            key3 = MsgID(chat_id=chat_id, msg_id=reply_id)
+            if key3 in self.reply_bases:
+                del self.reply_bases[key3]
+
+
+def join_users_texts(messages: list) -> str:
+    "Join messages from different users prettily"
+    def format_one(msg) -> str:
+        link = msg.from_user.link
+        name = msg.from_user.full_name
+        text = msg.text
+        if len(msg.text) > 32:
+            text = msg.text[:32] + "..."
+        text = escape(text)
+        return f"<i><a href\"{link}\">{name}</a></i>: {text}"
+    return "\n".join(map(format_one, messages))

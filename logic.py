@@ -126,8 +126,17 @@ class Action:
     pass
 class DoNothing(Action):
     pass
-class UniteMessages(Action):
-    def __init__(self, sources):
+class JoinUserMessages(Action):
+    "Join multiple messages of single user"
+    def __init__(self, sources : list): # list of telegram messages
+        self.messages = sources
+class UniteMessagesContent(Action):
+    "Unite identical messages of multiple users"
+    def __init__(self, sources : list): # list of telegram messages
+        self.messages = sources
+class UniteMessagesReply(Action):
+    "Unite messages of multiple users based on what they replied to"
+    def __init__(self, sources : list): # list of telegram messages
         self.messages = sources
 
 
@@ -158,11 +167,11 @@ class MessageCounter:
             return DoNothing()
 
         if isinstance(new_status, UserSwitching):
-            return UniteMessages(new_status.messages)
+            return JoinUserMessages(new_status.messages)
             # messages contains even the new message, no need to manually add
             # it to insertion list
         elif isinstance(new_status, UserStrict):
-            return UniteMessages([message])
+            return JoinUserMessages([message])
         else:
             # this is impossible state, but type checker doesn't know that
             return DoNothing()

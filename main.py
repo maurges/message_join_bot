@@ -40,16 +40,22 @@ If you want to use this bot in your group, please set up your own copy. I'm curr
 
 
 def reply(counter, joiner):
-    def internal(update : Update, context : CallbackContext):
+    def internal(update : Update, context : CallbackContext) -> None:
         bot = context.bot
         decision = counter.decide(update.message)
 
         if isinstance(decision, logic.DoNothing):
             joiner.cleanup(update.message)
             return
-        # otherwise instance is UniteMessages
-        user_messages = decision.messages
-        decision = joiner.join(user_messages)
+        elif isinstance(decision, logic.UniteMessagesContent):
+            user_messages = decision.messages
+            decision = joiner.unite_content(user_messages)
+        elif isinstance(decision, logic.UniteMessagesReply):
+            user_messages = decision.messages
+            decision = joiner.unite_reply(user_messages)
+        elif isinstance(decision, logic.JoinUserMessages):
+            user_messages = decision.messages
+            decision = joiner.join(user_messages)
 
         if isinstance(decision, join.SendMessage):
             did_send = bot.send_message(
@@ -90,7 +96,7 @@ def main(token):
     dp.add_handler(MessageHandler(Filters.text, reply_func))
 
     # log all errors
-    dp.add_error_handler(error)
+#     dp.add_error_handler(error)
 
     # Start the Bot
     updater.start_polling()
