@@ -21,6 +21,8 @@ class SimpleMessage:
             self.id = id
             self.first_name = name
             self.last_name = None
+            self.full_name = name
+            self.link = "https://t.me/@name"
 
     def __init__(self, chat_id : int, user_id : int
                 ,text : str, message_id : int
@@ -30,6 +32,7 @@ class SimpleMessage:
         self.from_user = SimpleMessage.HasIdName(user_id, name)
         self.text = text
         self.message_id = message_id
+        self.reply_to_message = None # TODO
 
     @staticmethod
     def gen() -> 'SimpleMessage':

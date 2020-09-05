@@ -26,6 +26,14 @@ class SimpleMessage:
         self.chat = SimpleMessage.HasId(chat_id)
         self.from_user = SimpleMessage.HasId(user_id)
         self.date = time
+        self.reply_to_message = None # TODO
+        self.text = "some text"
+
+        self.forward_from = None
+        self.forward_from_chat = None
+        self.forward_from_message_id = None
+        self.forward_signature = None
+        self.forward_date = None
 
     @staticmethod
     def gen() -> 'SimpleMessage':
@@ -60,13 +68,13 @@ class TestDecide(unittest.TestCase):
             r = counter.decide(msg)
             msg.date += logic.DelayDelete * 0.2
 
-        self.assertIsInstance(r, logic.UniteMessages)
+        self.assertIsInstance(r, logic.JoinUserMessages)
         sources = r.messages
         self.assertEqual(len(sources), logic.MessageThreshold)
 
         # insert one more after threshold
         r = counter.decide(msg)
-        self.assertIsInstance(r, logic.UniteMessages)
+        self.assertIsInstance(r, logic.JoinUserMessages)
         sources = r.messages
         self.assertEqual(len(sources), 1)
 
