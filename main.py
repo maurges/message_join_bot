@@ -13,6 +13,7 @@ import logging
 import logic
 import join
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Handler, CallbackContext # type: ignore
+from telegram.error import BadRequest # type: ignore
 from telegram import Update # type: ignore
 
 # Enable logging
@@ -75,7 +76,12 @@ def reply(counter, joiner):
                     )
         # delete user's messages
         for msg in user_messages:
-            bot.delete_message(msg.chat.id, msg.message_id)
+            try:
+                bot.delete_message(msg.chat.id, msg.message_id)
+            except BadRequest:
+                # this happens because some messages are told to be deleted
+                # twice because of multiple counters
+                pass
     return internal
 
 

@@ -93,7 +93,7 @@ class Joiner:
         key = BodyID(chat_id=chat_id, text=content)
 
         if key not in self.content_bases:
-            text = join_users_texts(messages)
+            text = message.text + "\n" + join_signatures(messages)
             self.content_bases[key] = MessageInfo(None, text)
             return SendMessage(chat_id, text)
         else:
@@ -101,7 +101,7 @@ class Joiner:
             assert message_id is not None
             if message_id == None:
                 raise RuntimeError("Encountered None as message id. Did you forget to call `sent_message`?")
-            text += "\n" + join_users_texts(messages)
+            text += "\n" + join_signatures(messages)
             self.content_bases[key] = MessageInfo(message_id, text)
             return EditMessage(chat_id, message_id, text)
 
@@ -197,6 +197,14 @@ class Joiner:
             if key3 in self.reply_bases:
                 del self.reply_bases[key3]
 
+def join_signatures(messages: list) -> str:
+    "Join as as sign-off of who wrote the messages"
+    def format_one(msg) -> str:
+        link = msg.from_user.link
+        name = msg.from_user.full_name
+        return f" - <i><a href=\"{link}\">{name}</a></i>"
+    return "\n".join(map(format_one, messages))
+
 
 def join_users_texts(messages: list) -> str:
     "Join messages from different users prettily"
@@ -207,5 +215,5 @@ def join_users_texts(messages: list) -> str:
         if len(msg.text) > 32:
             text = msg.text[:32] + "..."
         text = escape(text)
-        return f"<i><a href\"{link}\">{name}</a></i>: {text}"
+        return f"<i><a href=\"{link}\">{name}</a></i>: {text}"
     return "\n".join(map(format_one, messages))
